@@ -20,26 +20,16 @@ public class DataCollection extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_data_collection);
 
-        Log.d("onCreate", "Initialized view");
-
         BluetoothDevice device = findOBDDevice(BluetoothAdapter.getDefaultAdapter().getBondedDevices());
 
         adapter = BluetoothAdapter.getDefaultAdapter();
         adapter.startDiscovery();
 
-        Log.d("adapter", Integer.toString(adapter.getState()));
-
         try {
-            Log.d("socket", "Connecting to " + device.getName());
             socket = connectToDevice(device);
-
-            Log.d("adapter", Integer.toString(adapter.getState()));
         } catch (IOException exception) {
             Log.e("socket", exception.getMessage());
         }
-
-        Log.d("socket", socket.getRemoteDevice().toString());
-        Log.d("socket", "Connected: " + Boolean.toString(socket.isConnected()));
 
         timeout(startReadDataThread());
 
@@ -47,15 +37,11 @@ public class DataCollection extends Activity {
             socket.getInputStream().close();
             socket.getOutputStream().close();
             socket.close();
-            Log.d("adapter", Integer.toString(adapter.getState()));
-            Log.d("socket", "Closed connection");
         } catch (IOException exception) {
 
         }
 
-        Log.d("socket", "Is connected: " + socket.isConnected());
-
-        Log.d("finish", "Done");
+        Log.d("app", "Finished");
     }
 
     public Thread startReadDataThread() {
@@ -63,8 +49,6 @@ public class DataCollection extends Activity {
             @Override
             public void run() {
                 EngineRPMObdCommand cmd = new EngineRPMObdCommand();
-
-                Log.d("data", "Trying to read RPM");
 
                 try {
                     cmd.run(socket.getInputStream(), socket.getOutputStream());
@@ -84,13 +68,12 @@ public class DataCollection extends Activity {
         long end = System.currentTimeMillis() + 10000;
 
         while (thread.isAlive()) {
-            if (System.currentTimeMillis() >= end) {
+            if (System.currentTimeMillis() > end) {
                 break;
             }
 
             try {
                 Thread.sleep(1000);
-                Log.d("thread", "Trying...");
             } catch (InterruptedException exception) {
 
             }
@@ -99,11 +82,7 @@ public class DataCollection extends Activity {
 
     private BluetoothDevice findOBDDevice(Set<BluetoothDevice> pairedDevices) {
         for (BluetoothDevice pairedDevice : pairedDevices) { // TODO: Use Guava.
-            Log.d("findOBDDevice", pairedDevice.getName());
-
             if (pairedDevice.getName().trim().equals("OBDII")) { // OBDII
-                Log.d("findOBDDevice", "Found OBDII device");
-
                 return pairedDevice;
             }
         }
@@ -115,9 +94,7 @@ public class DataCollection extends Activity {
         BluetoothSocket socket = device.createRfcommSocketToServiceRecord(UUIDForApp);
         socket.connect();
 
-        adapter.cancelDiscovery();
-
-        Log.d("connectToDevice", "Connected to socket " + socket.getRemoteDevice().toString());
+        adapter.cancelDiscovery(); // Slow otherwise.
 
         return socket;
     }
